@@ -3,41 +3,30 @@ import os
 from openai import OpenAI
 
 app = Flask(__name__)
-
-client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY")
-)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return render_template("index.html")  # index.html templates klasöründe olmalı
 
-@app.route("/ask", methods=["POST"])
-def ask():
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.json
+    message = data.get("message", "").strip()
+    if not message:
+        return jsonify({"response": "Lütfen bir mesaj yazın!"})
+
     try:
-        data = request.get_json()
-        user_message = data.get("message")
-
         response = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are NovaMind AI, a helpful assistant."},
-                {"role": "user", "content": user_message}
-            ]
+            messages=[{"role": "user", "content": message}]
         )
-
-        return jsonify({
-            "reply": response.choices[0].message.content
-        })
-
+        resp_text = response.choices[0].message.content if response.choices else "Cevap alınamadı"
+        return jsonify({"response": resp_text})
     except Exception as e:
-        return jsonify({
-            "reply": f"Hata oluştu: {str(e)}"
-        })
+        print(e)
+        return jsonify({"response": "Cevap alınamadı"})
 
 if __name__ == "__main__":
-    import os
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5000))  # Render buraya port atıyor
     app.run(host="0.0.0.0", port=port)
-
-
