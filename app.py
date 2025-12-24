@@ -3,11 +3,11 @@ import os
 from openai import OpenAI
 
 app = Flask(__name__)
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 @app.route("/")
 def home():
-    return render_template("index.html")  # index.html templates klasöründe olmalı
+    return render_template("index.html")
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -28,5 +28,5 @@ def chat():
         return jsonify({"response": "Cevap alınamadı"})
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Render buraya port atıyor
+    port = int(os.environ.get("PORT", 5000))  # Render PORT'u buradan alır
     app.run(host="0.0.0.0", port=port)
