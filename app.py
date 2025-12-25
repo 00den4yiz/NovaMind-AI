@@ -3,6 +3,8 @@ import os
 from openai import OpenAI
 
 app = Flask(__name__)
+
+# OpenAI API Key
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 @app.route("/")
@@ -14,7 +16,7 @@ def chat():
     data = request.json
     message = data.get("message", "").strip()
     if not message:
-        return jsonify({"response": "Lütfen bir mesaj yazın!"})
+        return jsonify({"response": "Soru algılanamadı"})
 
     try:
         response = client.chat.completions.create(
