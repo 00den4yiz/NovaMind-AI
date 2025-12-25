@@ -1,45 +1,32 @@
-document.addEventListener("DOMContentLoaded", () => {
-    const sendBtn = document.getElementById('send-btn');
-    const userInput = document.getElementById('user-input');
-    const messages = document.getElementById('messages');
+const userInput = document.getElementById("user-input");
+const sendBtn = document.getElementById("send-btn");
+const messagesDiv = document.getElementById("messages");
 
-    sendBtn.addEventListener('click', async () => {
-        const text = userInput.value.trim();
-        if(!text) {
-            alert("Lütfen bir mesaj yazın!");
-            return;
-        }
+async function sendMessage() {
+    const message = userInput.value.trim();
+    if (!message) return alert("Lütfen bir mesaj yazın!");
+    messagesDiv.innerHTML += `<p class="user"><strong>Sen:</strong> ${message}</p>`;
+    userInput.value = "";
 
-        // Kullanıcı mesajı
-        const userMsg = document.createElement('p');
-        userMsg.classList.add("user");
-        userMsg.innerHTML = `<strong>Sen:</strong> ${text}`;
-        messages.appendChild(userMsg);
-        userInput.value = "";
+    const botMsg = document.createElement("p");
+    botMsg.classList.add("ai");
+    botMsg.innerHTML = "<strong>NovaMind AI:</strong> Cevap alınıyor...";
+    messagesDiv.appendChild(botMsg);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-        // AI mesajı (bekleme)
-        const aiMsg = document.createElement('p');
-        aiMsg.classList.add("ai");
-        aiMsg.innerHTML = `<strong>NovaMind AI:</strong> Cevap alınıyor...`;
-        messages.appendChild(aiMsg);
+    try {
+        const response = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message })
+        });
+        const data = await response.json();
+        botMsg.innerHTML = `<strong>NovaMind AI:</strong> ${data.response}`;
+    } catch (err) {
+        botMsg.innerHTML = `<strong>NovaMind AI:</strong> Cevap alınamadı`;
+        console.error(err);
+    }
+}
 
-        messages.scrollTop = messages.scrollHeight;
-
-        try {
-            const response = await fetch("http://localhost:3000/chat", {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({message:text})
-            });
-            const data = await response.json();
-            aiMsg.innerHTML = `<strong>NovaMind AI:</strong> ${data.response}`;
-        } catch(err) {
-            aiMsg.innerHTML = `<strong>NovaMind AI:</strong> Hata oluştu.`;
-            console.error(err);
-        }
-    });
-
-    userInput.addEventListener("keypress", e => {
-        if(e.key === "Enter") sendBtn.click();
-    });
-});
+sendBtn.addEventListener("click", sendMessage);
+userInput.addEventListener("keypress", e => { if(e.key === "Enter") sendMessage(); });
