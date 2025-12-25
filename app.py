@@ -1,34 +1,46 @@
 import os
 from flask import Flask, request, jsonify
-from openai import OpenAI
+import openai
+from dotenv import load_dotenv
 
+# .env dosyasını yükle (Render'da /etc/secrets/.env kullanabilirsin)
+load_dotenv("/etc/secrets/.env")  # Eğer local çalıştırıyorsan load_dotenv() yeterli
+
+# OpenAI API key
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# Flask uygulaması
 app = Flask(__name__)
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-@app.route("/chat", methods=["POST"])
-def chat():
-    data = request.json
-    message = data.get("message", "").strip()
-    if not message:
-        return jsonify({"response": "Soru algılanamadı"})
-
+@app.route("/ask", methods=["POST"])
+def ask():
+    """
+    Kullanıcı sorusunu alır ve OpenAI API ile yanıt döner.
+    JSON formatında POST edilmeli:
+    { "question": "Merhaba, nasılsın?" }
+    """
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": message}]
+        data = request.get_json()
+        question = data.get("question", "")
+        
+        if not question:
+            return jsonify({"answer": "Lütfen bir soru gönderin."})
+        
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=question,
+            max_tokens=150,
+            temperature=0.7
         )
-        resp_text = response.choices[0].message.content if response.choices else "Cevap alınamadı"
-        return jsonify({"response": resp_text})
-    except:
-        return jsonify({"response": "Hata oluştu"})
+        
+        answer = response.choices[0].text.strip()
+        return jsonify({"answer": answer})
+    
+    except Exception as e:
+        return jsonify({"answer": f"Hata oluştu: {str(e)}"})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
+    # Render’da mutlaka 0.0.0.0 host kullan
     app.run(host="0.0.0.0", port=port)
 
-import os
-
-from dotenv import load_dotenv
-load_dotenv("/etc/secrets/.env")  # Eğer dosya buradaysa
-
-api_key = os.environ.get("OPENAI_API_KEY")
